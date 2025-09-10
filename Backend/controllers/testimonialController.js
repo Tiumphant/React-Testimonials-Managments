@@ -5,8 +5,6 @@ export const createTestimonial = async (req, res) => {
   try {
     const { fullName, email, rating, title, feedback, consent } = req.body;
 
-    // ✅ Handle uploaded files
-    // If using upload.fields([{name: "profilePicture"}, {name: "media"}])
     const profilePicture = req.files?.profilePicture
       ? `/uploads/${req.files.profilePicture[0].filename}`
       : null;
@@ -22,8 +20,8 @@ export const createTestimonial = async (req, res) => {
       title,
       feedback,
       consent,
-      profilePicture, // saved path for browser access
-      mediaUrl, // saved path for browser access
+      profilePicture,
+      mediaUrl,
     });
 
     await testimonial.save();
@@ -37,13 +35,45 @@ export const createTestimonial = async (req, res) => {
   }
 };
 
-// GET - Approved testimonials (Public)
+// GET - Approved testimonials (Public) with Pagination
 export const getApprovedTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find({ status: "Approved" }).sort({
-      createdAt: -1,
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 5;
+    const skip = (page - 1) * limit;
+
+    const total = await Testimonial.countDocuments({ status: "Approved" });
+    const testimonials = await Testimonial.find({ status: "Approved" })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      testimonials,
     });
-    res.json(testimonials);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// GET - Rating summary (average & total) for approved testimonials
+export const getRatingSummary = async (req, res) => {
+  try {
+    const stats = await Testimonial.aggregate([
+      { $match: { status: "Approved" } },
+      {
+        $group: {
+          _id: null,
+          avgRating: { $avg: "$rating" },
+          total: { $sum: 1 },
+        },
+      },
+    ]);
+
+    res.json(stats[0] || { avgRating: 0, total: 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

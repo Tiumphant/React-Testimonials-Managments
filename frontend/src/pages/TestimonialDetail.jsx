@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchTestimonialById } from "../api/testimonialApi";
+import { motion } from "framer-motion";
 
 const TestimonialDetail = () => {
   const { id } = useParams();
@@ -15,53 +16,69 @@ const TestimonialDetail = () => {
         console.error("Failed to fetch testimonial:", err);
       }
     };
-
     loadTestimonial();
   }, [id]);
 
   if (!testimonial)
     return <p className="p-4 text-center text-gray-500">Loading...</p>;
 
-  // Backend base URL for uploaded files
   const BASE_URL = "http://localhost:5000";
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded">
-      {/* User Info */}
-      <div className="flex items-center space-x-4 mb-4">
-        <img
-          src={
-            testimonial.profilePicture
-              ? `${BASE_URL}${testimonial.profilePicture}`
-              : "https://via.placeholder.com/80"
-          }
-          alt="profile"
-          className="w-16 h-16 rounded-full object-cover"
-        />
+    <motion.div
+      className="max-w-3xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-10"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
+      {/* Profile Section */}
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="w-20 h-20 rounded-full border-4 border-gradient-to-r from-blue-400 to-indigo-500 p-1">
+          <img
+            src={
+              testimonial.profilePicture
+                ? `${BASE_URL}${testimonial.profilePicture}`
+                : "https://via.placeholder.com/80"
+            }
+            alt="profile"
+            className="w-full h-full rounded-full object-cover"
+          />
+        </div>
         <div>
-          <h2 className="text-xl font-bold">{testimonial.fullName}</h2>
-          <p className="text-gray-600">{testimonial.designation}</p>
+          <h2 className="text-2xl font-bold text-gray-800">
+            {testimonial.fullName}
+          </h2>
+          {testimonial.designation && (
+            <p className="text-gray-500">{testimonial.designation}</p>
+          )}
+          {testimonial.companyName && (
+            <p className="text-gray-400 text-sm">{testimonial.companyName}</p>
+          )}
         </div>
       </div>
 
-      {/* Testimonial Content */}
-      <h3 className="text-lg font-semibold">{testimonial.title}</h3>
-      <p className="mt-2 text-gray-700">{testimonial.feedback}</p>
+      {/* Testimonial Title */}
+      <h3 className="text-xl font-semibold text-gray-700 mb-2">
+        {testimonial.title}
+      </h3>
 
-      {/* Media (image or video) */}
+      {/* Feedback */}
+      <p className="text-gray-600 mb-4 whitespace-pre-line">{testimonial.feedback}</p>
+
+      {/* Media */}
       {testimonial.mediaUrl && (
-        <div className="mt-4">
+        <div className="mt-4 rounded overflow-hidden shadow-sm">
           {testimonial.mediaUrl.match(/\.(jpeg|jpg|png|gif)$/i) ? (
             <img
               src={`${BASE_URL}${testimonial.mediaUrl}`}
               alt="testimonial media"
-              className="rounded w-full max-h-96 object-cover"
+              className="w-full max-h-96 object-cover rounded-lg"
             />
           ) : testimonial.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
             <video
               src={`${BASE_URL}${testimonial.mediaUrl}`}
               controls
-              className="rounded w-full max-h-96"
+              className="w-full max-h-96 rounded-lg"
             />
           ) : (
             <a
@@ -77,8 +94,22 @@ const TestimonialDetail = () => {
       )}
 
       {/* Rating */}
-      <p className="text-yellow-500 mt-2">⭐ {testimonial.rating}</p>
-    </div>
+      <div className="flex items-center mt-4">
+        {[...Array(5)].map((_, idx) => (
+          <span
+            key={idx}
+            className={`text-2xl ${
+              idx < testimonial.rating ? "text-yellow-400" : "text-gray-300"
+            }`}
+          >
+            ★
+          </span>
+        ))}
+        <span className="ml-2 text-gray-600 font-medium">
+          {testimonial.rating} / 5
+        </span>
+      </div>
+    </motion.div>
   );
 };
 
